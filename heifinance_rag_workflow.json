@@ -1,0 +1,385 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1wt9a55e52OyrA0wfCJfuZ7FJfjSvAJJR",
+          "mode": "list",
+          "cachedResultName": "n8n_heifinance",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1wt9a55e52OyrA0wfCJfuZ7FJfjSvAJJR"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        208
+      ],
+      "id": "d97cbf57-6891-4786-ac1b-9fdfc07bf2cd",
+      "name": "Google Drive Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -544,
+        208
+      ],
+      "id": "3298c640-ab71-4448-981d-835b1e9df422",
+      "name": "Download file"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "heicoders",
+          "mode": "list",
+          "cachedResultName": "heicoders"
+        },
+        "options": {
+          "pineconeNamespace": "heifinance"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        -336,
+        208
+      ],
+      "id": "5688e2fa-d81d-4a8e-9bf1-0bbba817543d",
+      "name": "Pinecone Vector Store"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        416
+      ],
+      "id": "8e2ce64b-008f-4cd8-ba2b-dc0854c8c297",
+      "name": "Embeddings OpenAI"
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -192,
+        416
+      ],
+      "id": "66e4d19c-6eda-4766-8978-23bc129b4b2d",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        560
+      ],
+      "id": "7a347a3c-4daf-4e2e-b5ed-05122ee5d715",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "=messageReceived",
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ],
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        128
+      ],
+      "id": "6accb563-2ad4-4a40-91e7-e43ced15e89f",
+      "name": "Gmail Trigger"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json['email body '] }}",
+        "options": {
+          "systemMessage": "=Prompt for n8n AI Agent:\n\nYou are an AI assistant for HeiFinance Bank, embedded in an n8n workflow.\n\nTask: Analyse the incoming email content. Determine if the email is asking about HeiFinance Bank products. \n\nIf it is not, output exactly: This is not an email about HeiFinance Bank products.\n\nIf it is but it is not a product found in the factsheet, output exactly: The product of interest is not found in the factsheet. Please check and reply to the customer. \n\nIf it is and is a product found in the factsheet, do the following: IMPORTANT: \n- Always extract numeric values verbatim, e.g., \"Minimum SGD 500\", even if phrasing differs. \n- Map synonyms: \"minimum deposit\" = \"Initial Deposit Requirement\"  \n- \"opening balance\" = \"Initial Deposit Requirement\"  \n- Only say “information unavailable” if no relevant chunk is returned at all. \n\nStructured Extraction (before drafting email): \n\nStep 1: Extract all numeric or factual details from the retrieved chunks. Example fields: Minimum initial deposit Balance maintenance requirements / fees Interest rates or bonus rates Any conditions or exceptions \n\nStep 2: Use the extracted details to fill the email template. \n\nEmail Reply Template \n\nDear {{ $json[\"from\"][\"value\"][0][\"name\"] || \"Valued Customer\" }}, \n\nThank you for reaching out to HeiFinance Bank. [Insert answer here using extracted product facts. Write in full, natural-sounding, proper sentences] \n\nFor your reference [only for relevant example scenario]: \nExample\n• [Detail 1] \n• [Detail 2] \n• [Detail 3] \n\nIf you have any further questions, please do not hesitate to contact us again. \n\nWarm regards,\nRinnie\nHeiFinance Bank \n\nRules / Guardrails \nOUTPUT REQUIREMENTS: \n- Only output the final email reply in the format specified in the template. Rephrase from the embeddings so that message sounds more like natural speech instead of just pasting directly.\n\n-If the customer name is missing, use “Valued Customer”. \n\n- Do NOT include any internal reasoning, structured extraction steps, notes, or explanations. \n- Do NOT prepend messages like “This is an email about HeiFinance Bank products”\n- The email should be ready to send as-is. \n\n- Do not invent numbers or make assumptions. \n-Always extract numbers from retrieved Pinecone chunks, even if phrasing differs. \n- Only reply “Information unavailable from factsheet. Please check” if Pinecone returns no relevant chunk. \n\n- When drafting the email, **do not repeat information**. \n- If multiple retrieved chunks contain the same numeric/factual details, include each fact only once. \n- When drafting the email, do not repeat words already present in the sentence. \n- If the fact sheet says “Minimum SGD 500,” and the sentence already includes “minimum,” only include the numeric value and currency, e.g., “SGD 500.” \n\n- Reply should be to the point and answer the query. If the example scenario for the product is relevant to the query (e.g. how much is the cashback, and the example scenario is an example of calculation of cashback), add the whole example scenario in the reference section. If no relevant example scenario, remove the reference section. Also, if the query is about specific calculations with examples given in the query (e.g. customer give specifics numbers on credit card spending), then also drop the reference section.\n\n-Only capitalize proper nouns (e.g., “HeiFinance Bank,” product names like “SavingsPlus”) and sentence beginnings.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        464,
+        128
+      ],
+      "id": "4f6981c5-0c2f-405f-a0a0-dc00ec9c00ba",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        336,
+        336
+      ],
+      "id": "6f289152-4faa-4f7c-bafa-4438f04bf2d4",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use the data to answer customer queries on products from Heifinance",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "heicoders",
+          "mode": "list",
+          "cachedResultName": "heicoders"
+        },
+        "options": {
+          "pineconeNamespace": "heifinance"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        448
+      ],
+      "id": "f7349801-e937-4765-8268-9e37e619f479",
+      "name": "Pinecone Vector Store1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        688
+      ],
+      "id": "2360a854-6e03-4aab-b8d8-0a02a0d57f41",
+      "name": "Embeddings OpenAI1"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Re: {{ $('Gmail Trigger').item.json.subject }}",
+        "message": "={{ $json.output }}",
+        "options": {
+          "threadId": "={{ $('Gmail Trigger').item.json.threadId }}",
+          "sendTo": "={{ $('Gmail Trigger').item.json.from.text }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        816,
+        128
+      ],
+      "id": "3a26c31a-3729-487d-bbca-c25ff0d02d2a",
+      "name": "Create a draft",
+      "webhookId": "511d436a-2f5b-4db4-adcc-19d512b78232",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "operation": "markAsRead",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}"
+      },
+      "name": "Mark Email as Read",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        800,
+        512
+      ],
+      "id": "6299af85-f0c1-4c67-9a17-21a730cabd82",
+      "webhookId": "ca265153-8738-47cd-9cc1-3c382a6f2b25"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "Mark Email as Read",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "",
+  "meta": {
+    "instanceId": "afe866a6c73b95b81858622021fedbaf1a1b3bba43664b91db94a7713bd046e0"
+  },
+  "tags": []
+}
