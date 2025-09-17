@@ -1,37 +1,41 @@
-HeiFinance AI Email Assistant ⚡
-Problem
+## HeiFinance AI Email Assistant ⚡
 
-HeiFinance Bank faced:
+**Overview**
 
-Overflowing customer queries 📩
+This project was built as a capstone case study at Heicoders Academy.
 
-Slow, inconsistent replies ⏳
+The case highlighted core challenges faced by HeiFinance Bank:
 
-Staff drained by repetitive Q&A 😓
+1. Overwhelmed customer support staff handling repetitive product enquiries.
 
-Solution
+2. Inconsistent responses leading to customer confusion.
+
+3. Slow turnaround time, especially for simple fact-based questions (e.g., deposit requirements, interest rates).
+
+The solution: an AI-driven email assistant implemented in n8n, integrated with OpenAI and Pinecone, to automate accurate and natural replies to customer emails.
+
+**Solution**
 
 This workflow (heifinance_final_workflow.json) turns Gmail + n8n + OpenAI + Pinecone into a 24/7 AI email assistant:
 
-Catch & Learn – Grabs new emails and updates factsheets from Google Drive.
+1. Catch & Learn – Grabs new emails and updates factsheets from Google Drive.
 
-Understand & Retrieve – Splits text, builds embeddings, and pulls exact product facts.
+2. Understand & Retrieve – Splits text, builds embeddings, and pulls exact product facts.
 
-Respond Smartly – Drafts natural, accurate replies with strict guardrails (no hallucinations, numbers copied verbatim).
+3. Respond Smartly – Drafts natural, accurate replies with strict guardrails (no hallucinations, numbers copied verbatim).
 
-Close the Loop – Creates Gmail drafts and marks emails as processed.
+4. Close the Loop – Creates Gmail drafts and marks emails as processed.
 
 Why It Wins
-
-✅ Instant, consistent responses
-✅ Facts always up-to-date
-✅ Saves support teams hours
-✅ Scales as queries grow
+<br> ✅ Instant, consistent responses
+<br> ✅ Facts always up-to-date
+<br> ✅ Saves support teams hours
+<br> ✅ Scales as queries grow
 
 Quick Start
 
-Import the JSON into n8n.
+1. Import the JSON into n8n.
 
-Add Gmail, Drive, OpenAI, and Pinecone credentials.
+2. Add Gmail, Drive, OpenAI, and Pinecone credentials.
 
-Activate. Watch your inbox calm down. 🧘
+3. Activate. Watch your inbox calm down. 🧘
