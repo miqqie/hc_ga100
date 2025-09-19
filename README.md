@@ -20,7 +20,7 @@ HeiFinance Bank faced three key challenges in its customer support operations:
 ---
 
 ### 🔧 Solution  
-The workflow (`heifinance_final_workflow.json`) integrates seamlessly with Gmail, Google Drive, OpenAI, and Pinecone to function as a **24/7 AI support assistant**:  
+The workflow integrates seamlessly with Gmail, Google Drive, OpenAI, and Pinecone to function as a **24/7 AI support assistant**:  
 
 1. **Catch & Learn** – Captures incoming emails and updates product factsheets automatically  
 2. **Understand & Retrieve** – Splits documents, builds embeddings, and retrieves precise information  
